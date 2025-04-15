@@ -26,7 +26,7 @@ const sectionPeninggalan = (data) => {
   );
 
   // Daftar peninggalan yang akan ditampilkan (data bisa kosong, maka menggunakan default dummy data)
-  const peninggalanList = data.Peninggalan || [
+  const peninggalanList = data.peninggalan || [
     { name: "Candi Utama", desc: "Candi utama.", image: "image_url" },
     // Tambah data dummy lainnya
   ];
@@ -64,50 +64,24 @@ const sectionPeninggalan = (data) => {
 // ===== Section UMKM =====
 // Fungsi untuk membuat bagian yang menampilkan UMKM di sekitar destinasi
 const sectionUmkm = (data) => {
-  const wrap = createEl("div", "mt-12");
+  const umkmList = data.umkm || []; // Gunakan array kosong jika `umkm` tidak ada
+  if (!Array.isArray(umkmList)) {
+    console.error("UMKM data is not an array:", umkmList);
+    return document.createElement("div"); // Kembalikan elemen kosong jika data tidak valid
+  }
 
-  const title = createEl(
-    "h2",
-    "text-xl md:text-2xl lg:text-4xl font-semibold text-primary mb-6",
-    `UMKM`
-  );
-
-  const grid = createEl(
-    "div",
-    "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-  );
-
-  // Daftar UMKM yang akan ditampilkan (data bisa kosong, maka menggunakan default dummy data)
-  const peninggalanList = data.Peninggalan || [
-    { name: "Candi Utama", desc: "Candi utama.", image: "image_url" },
-    // Tambah data dummy lainnya
-  ];
-
-  peninggalanList.forEach((item) => {
-    const card = createEl(
-      "div",
-      "relative rounded-xl overflow-hidden shadow hover:shadow-xl transition-all text-white min-h-[300px] flex flex-col justify-end"
-    );
-    if (item.image) {
-      card.style.backgroundImage = `url('${item.image}')`;
-    } else {
-      card.classList.add("bg-gradient-to-tr", "from-slate-600", "to-slate-400");
-    }
-
-    const overlay = createEl(
-      "div",
-      "bg-gradient-to-t from-black/60 via-black/30 to-transparent h-full w-full p-5 flex flex-col justify-end"
-    );
-
-    const h3 = createEl("h3", "text-lg md:text-xl font-bold mb-1", item.name);
-    const desc = createEl("p", "text-sm", item.desc);
-    overlay.append(h3, desc);
-    card.append(overlay);
-    grid.append(card);
+  const container = document.createElement("div");
+  umkmList.forEach((umkm) => {
+    const card = document.createElement("div");
+    card.className = "umkm-card";
+    card.innerHTML = `
+      <h3>${umkm.name}</h3>
+      <p>${umkm.description}</p>
+    `;
+    container.appendChild(card);
   });
 
-  wrap.append(title, grid);
-  return wrap;
+  return container;
 };
 
 // ===== Section Detail Destinasi =====
@@ -184,9 +158,6 @@ const sectionDetail = (data) => {
   infoBox.appendChild(infoGrid); // Menambahkan info grid ke info box
   rightCol.append(infoTitle, infoBox); // Menambahkan info box ke kolom kanan
 
-  // Menambahkan bagian peninggalan sejarah
-  const peninggalan = sectionPeninggalan(data);
-
   // Menambahkan bagian sejarah destinasi
   const sejarahSection = createEl("div", "mt-12");
   const sejarahTitle = createEl(
@@ -203,7 +174,7 @@ const sectionDetail = (data) => {
     "w-full h-56 my-3 rounded-xl overflow-hidden lg:w-1/2 lg:h-80"
   );
   const sejarahImg = createEl("img", "w-full h-full object-cover");
-  sejarahImg.src = data.ImageUrl || "https://picsum.photos/200/300";
+  sejarahImg.src = data.historyImage || "https://picsum.photos/200/300";
   sejarahImg.alt = data.Name;
   sejarahImgBox.appendChild(sejarahImg);
 
@@ -218,14 +189,16 @@ const sectionDetail = (data) => {
   sejarahFlex.append(sejarahImgBox, sejarahText); // Menambahkan gambar dan teks sejarah ke flex
   sejarahSection.append(sejarahTitle, sejarahFlex); // Menambahkan judul dan konten sejarah ke section
 
+  // Menambahkan bagian peninggalan sejarah
+  const peninggalan = sectionPeninggalan(data);
+
   // Menambahkan section UMKM ke dalam detail destinasi
   const umkmSection = sectionUmkm(data);
 
   gridContainer.append(leftCol, rightCol); // Menambahkan kolom kiri dan kanan ke dalam grid
-  section.append(gridContainer, peninggalan, sejarahSection, umkmSection); // Menambahkan semua section ke dalam satu container
+  section.append(gridContainer, sejarahSection, peninggalan, umkmSection); // Menambahkan semua section ke dalam satu container
 
   return section; // Mengembalikan seluruh section destinasi
 };
 
-// Mengekspor fungsi sectionDetail agar bisa digunakan di file lain
 export default sectionDetail;

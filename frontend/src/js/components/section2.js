@@ -6,32 +6,92 @@ const createEl = (tag, className = "", text = "") => {
   return el;
 };
 
+const url = "http://localhost:9000/destinasi";
+
 const section2 = async () => {
-  // section utama
   const section = createEl("section", "py-16");
   const container = createEl("div", "max-w-6xl mx-auto px-4");
 
-  // header-nya (judul & deskripsi)
   container.append(headerContent());
 
-  // grid buat nampung semua card destinasi
+  const filterContainer = createEl("div", "flex justify-center mb-6");
+  const filterSelect = createEl(
+    "select",
+    "border border-gray-300 rounded px-4 py-2",
+    ""
+  );
+
+  // Tambahkan opsi filter kategori
+  const categories = ["Semua", "Religious", "Nature", "History"];
+  categories.forEach((category) => {
+    const option = createEl("option", "", category);
+    option.value = category;
+    filterSelect.append(option);
+  });
+
+  filterContainer.append(filterSelect);
+  container.append(filterContainer);
+
   const grid = createEl(
     "div",
     "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
   );
 
-  // ambil data dari API lokal
-  const res = await fetch("http://localhost:9000/destinasi");
+  // Ambil data dari backend
+  const res = await fetch(url);
   const json = await res.json();
-  const data = json.data.destinasi;
+  const allData = json.data.destinasi;
 
-  // loop data & masukin ke grid
-  data.forEach((item) => {
-    grid.append(cardItem(item));
+  let filteredData = allData; // Data yang difilter
+  let visibleCount = 3; // Jumlah card yang ditampilkan
+
+  // Fungsi untuk merender card destinasi
+  const renderCards = () => {
+    grid.innerHTML = ""; // Kosongkan grid sebelum render ulang
+    const dataToShow = filteredData.slice(0, visibleCount); // Ambil data sesuai jumlah yang ditampilkan
+
+    dataToShow.forEach((item) => {
+      grid.append(cardItem(item));
+    });
+
+    // Tampilkan atau sembunyikan tombol "Lihat Lebih Banyak"
+    if (visibleCount >= filteredData.length) {
+      loadMoreBtn.classList.add("hidden");
+    } else {
+      loadMoreBtn.classList.remove("hidden");
+    }
+  };
+
+  // Event listener untuk filter kategori
+  filterSelect.addEventListener("change", (e) => {
+    const selectedCategory = e.target.value;
+    if (selectedCategory === "Semua") {
+      filteredData = allData; // Tampilkan semua data
+    } else {
+      filteredData = allData.filter(
+        (item) => item.Category === selectedCategory
+      );
+    }
+    visibleCount = 3; // Reset jumlah card yang ditampilkan
+    renderCards(); // Render ulang card
   });
 
-  container.append(grid);
+  // Tombol "Lihat Lebih Banyak"
+  const loadMoreBtn = createEl(
+    "button",
+    "mt-6 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition",
+    "Lihat Lebih Banyak"
+  );
+
+  loadMoreBtn.addEventListener("click", () => {
+    visibleCount += 3; // Tambah jumlah card yang ditampilkan
+    renderCards(); // Render ulang card
+  });
+
+  container.append(grid, loadMoreBtn);
   section.append(container);
+
+  renderCards(); // Render card pertama kali
   return section;
 };
 
@@ -54,14 +114,16 @@ const headerContent = () => {
 
 // ================= card per destinasi =================
 const cardItem = (data) => {
-  const { Name, Province, Regency, Category, Description, ImageUrl } = data;
+  const { Name, Province, Regency, Category, Description, images } = data;
 
-  // wrapper card-nya
   const card = createEl(
     "div",
     "relative rounded-xl overflow-hidden shadow hover:shadow-xl transition-all text-white min-h-[360px] flex flex-col justify-end"
   );
-  card.style.backgroundImage = `url('${ImageUrl}')`;
+
+  // Gunakan gambar pertama dari array `images`, atau gambar default jika kosong
+  const imageUrl = images && images.length > 0 ? images[0] : "https://via.placeholder.com/300";
+  card.style.backgroundImage = `url('${imageUrl}')`;
   card.style.backgroundSize = "cover";
   card.style.backgroundPosition = "center";
 
@@ -104,7 +166,11 @@ const cardItem = (data) => {
   // pas diklik, langsung redirect ke detail (dengan query param id)
   btn.addEventListener("click", (e) => {
     const destinationId = e.target.getAttribute("data-id");
-    window.location.href = `?id=${destinationId}`;
+    if (destinationId) {
+      window.location.href = `?id=${destinationId}`;
+    } else {
+      alert("ID destinasi tidak valid.");
+    }
   });
 
   // masukin semua ke overlay, terus overlay ke card

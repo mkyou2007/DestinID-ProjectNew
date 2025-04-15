@@ -5,8 +5,9 @@ const home2Section1 = (data) => {
   const div = document.createElement("div");
   div.className = `w-full h-80 md:h-[32rem] flex flex-col justify-center items-center text-center gap-5 p-4 md:p-8`;
 
-  // menambahkan background gambar ke div
-  div.style.backgroundImage = `url('${data.ImageUrl}')`;
+  // Gunakan gambar pertama dari array `images`, atau gambar default jika kosong
+  const imageUrl = data.images && data.images.length > 0 ? data.images[0] : "https://via.placeholder.com/300";
+  div.style.backgroundImage = `url('${imageUrl}')`;
   div.style.backgroundSize = "cover";
   div.style.backgroundPosition = "center";
 
@@ -20,21 +21,26 @@ const home2Section1 = (data) => {
     "bg-white text-black px-6 py-2 rounded-full text-sm md:text-base font-semibold shadow hover:bg-gray-200 transition hover:cursor-pointer";
   button.textContent = "View 360";
 
-  // aksi saat tombol diklik
+  // Event listener untuk membuka halaman panorama
   button.addEventListener("click", () => {
-    Swal.fire({
-      title: "Fitur 360",
-      text: "Fitur ini sedang dalam tahap pengerjaan.",
-      icon: "info",
-      confirmButtonText: "OK",
-    });
+    if (data.StreetViewCoordinates) {
+      const { lat, lng } = data.StreetViewCoordinates;
+      // Buka halaman panorama dengan parameter latitude dan longitude
+      window.open(`panorama.html?lat=${lat}&lng=${lng}`, "_blank");
+    } else {
+      Swal.fire({
+        title: "Fitur Tidak Tersedia",
+        text: "Street View untuk destinasi ini belum tersedia.",
+        icon: "info",
+        confirmButtonText: "OK",
+      });
+    }
   });
 
-  // menambahkan title dan button ke dalam div
   div.append(title, button);
-  section.append(div); // menambahkan div ke section
+  section.append(div);
 
-  return section; // mengembalikan section
+  return section;
 };
 
 export default home2Section1;
